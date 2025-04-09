@@ -10,11 +10,12 @@ def test_create_job():
     print("\n=== Testing Job Creation ===")
     job_data = {
         "start_time": datetime.now().isoformat(),
-        "payload": "Fuck ankita",
+        "payload": "Health check",
         "status": "pending",
         "periodic_flag": True,
-        "period_time": 3600,
-        "retry_count": 3
+        "period_time": 2000,
+        "retry_count": 3,
+        "retry_delay": 5,
     }
     
     response = requests.post(f"{BASE_URL}/jobs", json=job_data)
