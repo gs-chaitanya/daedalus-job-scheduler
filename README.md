@@ -16,18 +16,17 @@ In cqlsh run :
 ```bash
 CREATE KEYSPACE job_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
-USE job_keyspace;
+USE job_space;
 
-CREATE TABLE JobExecutionHistory (
-    job_id UUID,
-    execution_id timeuuid,
+CREATE TABLE IF NOT EXISTS JobExecutionHistory (
+    job_id UUID PRIMARY KEY,
     start_time timestamp,
     end_time timestamp,
-    worker_id text,
     status text,
-    error_message text,
-    PRIMARY KEY ((job_id), execution_id)
-) WITH CLUSTERING ORDER BY (execution_id DESC);
+    error_message text
+);
+DESCRIBE TABLES;
+DESCRIBE TABLE JobExecutionHistory;
 
 ```
 
