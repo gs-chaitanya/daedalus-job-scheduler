@@ -16,7 +16,7 @@ In cqlsh run :
 ```bash
 CREATE KEYSPACE job_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
-USE job_space;
+USE job_keyspace;
 
 CREATE TABLE IF NOT EXISTS JobExecutionHistory (
     job_id UUID PRIMARY KEY,
