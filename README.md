@@ -21,10 +21,14 @@ USE job_space;
 CREATE TABLE IF NOT EXISTS JobExecutionHistory (
     job_id UUID PRIMARY KEY,
     start_time timestamp,
-    end_time timestamp,
+    payload text,
     status text,
+    periodic_flag boolean,
+    period_time int,
+    retry_count int,
+    retry_delay int,
     error_message text
-);
+);                    
 DESCRIBE TABLES;
 DESCRIBE TABLE JobExecutionHistory;
 
