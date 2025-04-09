@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: zookeeper:3.7
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_4LW_COMMANDS_WHITELIST: "ruok,stat,conf,isro,isrw,envi"
