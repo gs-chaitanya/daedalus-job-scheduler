@@ -1,9 +1,21 @@
 version: '3.8'
-
 services:
   zookeeper:
-    image: zookeeper:3.7
+    image: confluentinc/cp-zookeeper:7.4.0
     ports:
       - "2181:2181"
     environment:
-      ZOO_4LW_COMMANDS_WHITELIST: "ruok,stat,conf,isro,isrw,envi"
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"

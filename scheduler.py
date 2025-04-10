@@ -6,6 +6,14 @@ import uuid
 from cassandra.cluster import Cluster
 from kazoo.client import KazooClient, KazooState
 from kazoo.recipe.election import Election
+from kafka import KafkaProducer
+
+producer = KafkaProducer(
+    bootstrap_servers=['kafka:9092'],  # Use container name for Docker network
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+
+
 
 # ----------------------------
 # Configuration and Logging
@@ -20,6 +28,8 @@ ELECTION_PATH = '/election/scheduler'
 
 # Dummy queue for testing
 dummy_queue = []
+
+
 
 # ----------------------------
 # Cassandra Connection
@@ -49,6 +59,7 @@ election = Election(zk, ELECTION_PATH)
 # Leader Task
 # ----------------------------
 def leader_task():
+
     logging.info("🚀 I am the leader now. Starting polling loop...")
 
     while True:
@@ -63,8 +74,10 @@ def leader_task():
             job_id = row.job_id
             start_time = row.start_time
 
-            dummy_queue.append((str(job_id), start_time))
-            logging.info(f"✅ Enqueued job {job_id} scheduled at {start_time}")
+            message = f"{job_id}:{start_time}"
+            producer.send('job_queue', value=message.encode('utf-8'))
+            logging.info(f"✅ Pushed job {job_id} to Kafka: {message}")
+
 
             # Optionally, mark job as "scheduled" or remove it if one-time
 
@@ -75,6 +88,9 @@ def leader_task():
 
         # Sleep for 1 minute
         time.sleep(60)
+
+#
+
 
 # ----------------------------
 # Election Runner

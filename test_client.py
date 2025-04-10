@@ -4,13 +4,13 @@ from datetime import datetime
 import json
 
 
-BASE_URL = "http://localhost:5000"
+BASE_URL = "http://localhost:8000"
 
 def test_create_job():
     print("\n=== Testing Job Creation ===")
     job_data = {
         "start_time": datetime.now().isoformat(),
-        "payload": "Fuck ankita",
+        "payload": "Fuck again",
         "status": "pending",
         "periodic_flag": True,
         "period_time": 3600,
