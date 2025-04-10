@@ -44,8 +44,9 @@ def generate_jobs(n=10):
         payload = random_payload()
         is_periodic = random.choice([True, False])
         period_time = random.choice([60, 120, 300]) if is_periodic else None
+        user_id=random.choice(['1' , '2' ,'3' ,'4' ,'5'])
 
-        insert_job(job_id, start_time, payload, is_periodic, period_time, user_id=uuid.uuid4())
+        insert_job(job_id, start_time, payload, is_periodic, period_time, user_id)
 
         print(f"Inserted job {job_id} | start_time: {start_time} | periodic: {is_periodic} | payload: {payload}")
 

@@ -20,12 +20,12 @@ def create_table(session):
             job_id UUID PRIMARY KEY,
             start_time timestamp,
             payload text,
-            user_id UUID,
             status text,
             periodic_flag boolean,
             period_time int,
             retry_count int,
             retry_delay int,
-            error_message text
+            error_message text,
+            user_id text
         );
     """)

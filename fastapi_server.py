@@ -1,12 +1,24 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from uuid import UUID, uuid4
 from models import CassandraConnection, create_table
 from datetime import datetime
 from typing import Optional
+from fastapi.middleware.cors import CORSMiddleware
+from cassandra.query import dict_factory
 
 app = FastAPI(title="Nutanix Paglus Job API")
+
+# 👇 Add this before your routes
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # or ["*"] for all
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # Cassandra setup
 cassandra = CassandraConnection('job_keyspace')
@@ -16,6 +28,7 @@ create_table(session)
 # --- Request Models ---
 class JobCreate(BaseModel):
     start_time: str
+    user_id: str
     payload: Optional[str] = ''
     status: str
     periodic_flag: Optional[bool] = False
@@ -26,6 +39,7 @@ class JobCreate(BaseModel):
 
 class JobUpdate(BaseModel):
     start_time: Optional[str] = None
+    user_id: Optional[str] = None
     payload: Optional[str] = None
     status: Optional[str] = None
     periodic_flag: Optional[bool] = None
@@ -46,29 +60,42 @@ def create_job(job: JobCreate):
     start_time = datetime.fromisoformat(job.start_time)
     session.execute("""
         INSERT INTO JobExecutionHistory 
-        (job_id, start_time, payload, status, periodic_flag, period_time, retry_count, retry_delay, error_message)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-    """, (job_id, start_time, job.payload, job.status, job.periodic_flag,
+        (job_id, start_time, user_id, payload, status, periodic_flag, period_time, retry_count, retry_delay, error_message)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, (job_id, start_time, job.user_id, job.payload, job.status, job.periodic_flag,
           job.period_time, job.retry_count, job.retry_delay, job.error_message))
     return {"message": "Job created successfully", "job_id": str(job_id)}
 
-@app.get("/jobs/{job_id}")
-def get_job_history(job_id: UUID):
-    row = session.execute("SELECT * FROM JobExecutionHistory WHERE job_id = %s", (job_id,)).one()
-    if row:
-        return {
-            "job_id": str(row.job_id),
-            "start_time": row.start_time.isoformat() if row.start_time else None,
-            "payload": row.payload,
-            "status": row.status,
-            "periodic_flag": row.periodic_flag,
-            "period_time": row.period_time,
-            "retry_count": row.retry_count,
-            "retry_delay": row.retry_delay,
-            "error_message": row.error_message
-        }
-    else:
-        raise HTTPException(status_code=404, detail="Job not found")
+
+@app.get("/jobs/{user_id}")
+def get_jobs_by_user(user_id: str):
+    session.row_factory = dict_factory
+    
+    
+    rows = session.execute(
+        "SELECT * FROM JobExecutionHistory WHERE user_id = %s ALLOW FILTERING", 
+        (user_id,)
+    )
+    
+    jobs = []
+    for row in rows:
+        jobs.append({
+            "job_id": str(row["job_id"]),
+            "start_time": row["start_time"].isoformat() if row["start_time"] else None,
+            "user_id": row["user_id"],
+            "payload": row["payload"],
+            "status": row["status"],
+            "periodic_flag": row["periodic_flag"],
+            "period_time": row["period_time"],
+            "retry_count": row["retry_count"],
+            "retry_delay": row["retry_delay"],
+            "error_message": row["error_message"]
+        })
+
+    if not jobs:
+        raise HTTPException(status_code=404, detail="No jobs found for this user")
+    
+    return {"jobs": jobs}
 
 @app.put("/jobs/{job_id}")
 def update_job(job_id: UUID, update: JobUpdate):
