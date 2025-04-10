@@ -6,7 +6,7 @@ from datetime import datetime
 app = Flask(__name__)
 
 # Cassandra setup
-cassandra = CassandraConnection('job_space')
+cassandra = CassandraConnection('job_keyspace')
 session = cassandra.get_session()
 create_table(session)
 
