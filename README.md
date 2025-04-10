@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS JobExecutionHistory (
     period_time int,
     retry_count int,
     retry_delay int,
-    error_message text
+    error_message text,
+    user_id UUID
 );                    
 DESCRIBE TABLES;
 DESCRIBE TABLE JobExecutionHistory;
