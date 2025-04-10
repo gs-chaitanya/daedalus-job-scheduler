@@ -1,25 +1,51 @@
 import datetime
 import time
 import json
+import logging
 from cassandra.cluster import Cluster
 from kafka import KafkaProducer
+from kazoo.client import KazooClient, KazooState
+from kazoo.recipe.election import Election
 
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+
+# Configuration
 CASSANDRA_HOSTS = ['127.0.0.1']
 KEYSPACE = 'job_keyspace'
 KAFKA_BOOTSTRAP_SERVERS = ['localhost:9092']
 KAFKA_TOPIC = 'jobs'
-POLL_INTERVAL_SECONDS = 2
+POLL_INTERVAL_SECONDS = 5
+ZOOKEEPER_HOSTS = '127.0.0.1:2182'  # Dedicated ZK container
+ELECTION_PATH = '/election/scheduler'
 
+# Cassandra
 cluster = Cluster(CASSANDRA_HOSTS)
 session = cluster.connect(KEYSPACE)
+
+# Kafka
 producer = KafkaProducer(
     bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
     value_serializer=lambda v: json.dumps(v).encode('utf-8'),
     key_serializer=lambda k: k.encode('utf-8')
 )
 
-print("Cassandra and Kafka producers initialized.")
+# ZooKeeper
+zk = KazooClient(hosts=ZOOKEEPER_HOSTS)
+zk.start()
 
+def zk_listener(state):
+    if state == KazooState.LOST:
+        logging.warning("ZooKeeper session lost")
+    elif state == KazooState.SUSPENDED:
+        logging.warning("ZooKeeper connection suspended")
+    elif state == KazooState.CONNECTED:
+        logging.info("Connected to ZooKeeper")
+
+zk.add_listener(zk_listener)
+election = Election(zk, ELECTION_PATH)
+
+# Main job polling logic (only run by leader)
 def poll_and_schedule():
     now = datetime.datetime.utcnow()
     query = """
@@ -35,7 +61,7 @@ def poll_and_schedule():
         run_time = job.start_time
         job_data = {
             "job_id": job_id,
-            "start_time": run_time.isoformat(),
+            "start_time": int(run_time.timestamp()),
             "payload": job.payload,
             "periodic_flag": job.periodic_flag,
             "period_time": job.period_time,
@@ -43,7 +69,7 @@ def poll_and_schedule():
             "retry_delay": job.retry_delay
         }
 
-        print(f"Sending job {job_id} scheduled at {run_time}")
+        logging.info(f"Enqueuing job {job_id} scheduled at {int(run_time.timestamp())}")
         producer.send(KAFKA_TOPIC, key=job_id, value=job_data)
         job_count += 1
 
@@ -58,21 +84,33 @@ def poll_and_schedule():
                 UPDATE JobExecutionHistory SET status='queued'
                 WHERE job_id=%s
             """, (job.job_id,))
-    
-    if job_count == 0:
-        print("No jobs found to schedule.")
-    else:
-        print(f"{job_count} job(s) sent to Kafka.")
 
-def run_scheduler():
+    if job_count:
+        logging.info(f"{job_count} job(s) sent to Kafka.")
+    else:
+        logging.info("No jobs to schedule.")
+
+# Leader-only loop
+def leader_task():
+    logging.info("Elected as leader. Starting scheduling loop...")
     while True:
         try:
-            print("Polling Cassandra for jobs...")
             poll_and_schedule()
             producer.flush()
         except Exception as e:
-            print("Error:", e)
+            logging.error("Error during scheduling: %s", e)
         time.sleep(POLL_INTERVAL_SECONDS)
 
+# Election start
+def run_election():
+    logging.info("Starting leader election...")
+    election.run(leader_task)
+
 if __name__ == '__main__':
-    run_scheduler()
+    try:
+        run_election()
+    except KeyboardInterrupt:
+        logging.info("Shutting down...")
+    finally:
+        zk.stop()
+        zk.close()
