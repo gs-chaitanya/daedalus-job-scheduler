@@ -39,13 +39,13 @@ def insert_job(job_id, start_time, payload, periodic_flag, period_time, user_id)
         user_id        
     ))
 
-def generate_jobs(n=10):
+def generate_jobs(n=1):
     for i in range(n):
         job_id = uuid.uuid4()
         offset_seconds = random.randint(100, 300)  # between 30s and 5 min from now
         start_time = now + timedelta(seconds=offset_seconds)
         payload = random_payload()
-        is_periodic = random.choice([True, False])
+        is_periodic = random.choice([False, False])
         period_time = random.choice([60, 120, 300]) if is_periodic else None
         user_id=random.choice(['1' , '2' ,'3' ,'4' ,'5'])
 
@@ -54,4 +54,4 @@ def generate_jobs(n=10):
         print(f"Inserted job {job_id} | start_time: {start_time} | periodic: {is_periodic} | payload: {payload}")
 
 if __name__ == '__main__':
-    generate_jobs(15)
+    generate_jobs(2)

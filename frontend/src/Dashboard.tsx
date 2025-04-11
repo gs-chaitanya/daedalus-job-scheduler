@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-
+import JobLogViewer from "./joblogsviewer";
 type Job = {
   job_id: string;
   start_time: string;
@@ -31,74 +31,102 @@ const Dashboard: React.FC = () => {
   const [ganttTasks, setGanttTasks] = useState<GanttTask[]>([]);
   const [darkMode, setDarkMode] = useState<boolean>(false);
 
-  useEffect(() => {
-    let socket: WebSocket | null = null;
-    let reconnectAttempts = 0;
-    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  // useEffect(() => {
+  //   let socket: WebSocket | null = null;
+  //   let reconnectAttempts = 0;
+  //   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   
-    const connectWebSocket = () => {
-      socket = new WebSocket("ws://localhost:8888/ws/jobs");
+  //   // const connectWebSocket = () => {
+  //   //   socket = new WebSocket("ws://localhost:8888/ws/jobs");
   
-      socket.onopen = () => {
-        console.log("WebSocket connection established");
-        reconnectAttempts = 0; // Reset on successful connection
-      };
+  //   //   socket.onopen = () => {
+  //   //     console.log("WebSocket connection established");
+  //   //     reconnectAttempts = 0; // Reset on successful connection
+  //   //   };
   
-      socket.onmessage = (message) => {
-        try {
-          const data = JSON.parse(message.data);
+  //   //   // socket.onmessage = (message) => {
+  //   //   //   try {
+  //   //   //     console.log("Job updates received")
+  //   //   //     const data = JSON.parse(message.data);
+  //   //   //     console.log(data)
+  //   //   //     if (!data.job_id) {
+  //   //   //       console.warn("Received invalid job update:", data);
+  //   //   //       return;
+  //   //   //     }
   
-          if (!data.job_id) {
-            console.warn("Received invalid job update:", data);
-            return;
-          }
+  //   //   //     setJobs((prevJobs) => {
+  //   //   //       const jobExists = prevJobs.find(
+  //   //   //         (job) => job.job_id === data.job_id
+  //   //   //       );
   
-          setJobs((prevJobs) => {
-            const jobExists = prevJobs.find(
-              (job) => job.job_id === data.job_id
-            );
+  //   //   //       if (jobExists) {
+  //   //   //         return prevJobs.map((job) =>
+  //   //   //           job.job_id === data.job_id ? { ...job, ...data } : job
+  //   //   //         );
+  //   //   //       } else {
+  //   //   //         return [...prevJobs, data];
+  //   //   //       }
+  //   //   //     });
+  //   //   //   } catch (err) {
+  //   //   //     console.error("Error parsing WebSocket message:", err);
+  //   //   //   }
+  //   //   // };
+      
+  //   //   // socket.onmessage = (message) => {
+  //   //   //   try {
+  //   //   //     console.log("Job updates received");
+  //   //   //     const data = JSON.parse(message.data);
+  //   //   //     console.log(data);
+  //   //   //     if (!data.job_id) {
+  //   //   //       console.warn("Received invalid job update:", data);
+  //   //   //       return;
+  //   //   //     }
+      
+  //   //   //     setJobs((prevJobs) => {
+  //   //   //       const jobIndex = prevJobs.findIndex((job) => job.job_id === data.job_id);
+      
+  //   //   //       if (jobIndex !== -1) {
+  //   //   //         // Job exists, update it
+  //   //   //         const updatedJobs = [...prevJobs];
+  //   //   //         updatedJobs[jobIndex] = { ...updatedJobs[jobIndex], ...data };
+  //   //   //         return updatedJobs;
+  //   //   //       } else {
+  //   //   //         // Job does not exist, add it
+  //   //   //         return [...prevJobs, data];
+  //   //   //       }
+  //   //   //     });
+  //   //   //   } catch (error) {
+  //   //   //     console.error("Error parsing WebSocket message:", error);
+  //   //   //   }
+  //   //   // };
+  //   //   socket.onerror = (err) => {
+  //   //     console.error("WebSocket error:", err);
+  //   //   };
   
-            if (jobExists) {
-              return prevJobs.map((job) =>
-                job.job_id === data.job_id ? { ...job, ...data } : job
-              );
-            } else {
-              return [...prevJobs, data];
-            }
-          });
-        } catch (err) {
-          console.error("Error parsing WebSocket message:", err);
-        }
-      };
+  //   //   socket.onclose = (event) => {
+  //   //     console.warn("WebSocket closed:", event);
+  //   //     socket = null;
   
-      socket.onerror = (err) => {
-        console.error("WebSocket error:", err);
-      };
+  //   //     // Try reconnecting with backoff
+  //   //     const delay = Math.min(1000 * 2 ** reconnectAttempts, 30000); // max 30s
+  //   //     reconnectTimeout = setTimeout(() => {
+  //   //       reconnectAttempts++;
+  //   //       connectWebSocket();
+  //   //     }, delay);
+  //   //   };
+  //   // };
   
-      socket.onclose = (event) => {
-        console.warn("WebSocket closed:", event);
-        socket = null;
+  //   // connectWebSocket();
   
-        // Try reconnecting with backoff
-        const delay = Math.min(1000 * 2 ** reconnectAttempts, 30000); // max 30s
-        reconnectTimeout = setTimeout(() => {
-          reconnectAttempts++;
-          connectWebSocket();
-        }, delay);
-      };
-    };
-  
-    connectWebSocket();
-  
-    return () => {
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.close();
-      }
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
-      }
-    };
-  }, []);
+  //   // return () => {
+  //   //   if (socket && socket.readyState === WebSocket.OPEN) {
+  //   //     socket.close();
+  //   //   }
+  //   //   if (reconnectTimeout) {
+  //   //     clearTimeout(reconnectTimeout);
+  //   //   }
+  //   // };
+  // }, []);
   
 
   useEffect(() => {
@@ -178,12 +206,16 @@ const Dashboard: React.FC = () => {
                     {new Date(job.start_time).toLocaleString()}
                   </td>
                   <td
-                    className={`border px-3 py-2 font-semibold ${job.status === "done"
+                    className={`border px-3 py-2 font-semibold ${
+                      job.status === "done"
                         ? "text-green-600"
                         : job.status === "queued"
                           ? "text-blue-600"
-                          : "text-yellow-600"
-                      }`}
+                          : job.status === "failed"
+                            ? "text-red-600"
+                            : "text-yellow-600"
+                    }`}
+                    
                   >
                     {job.status || "pending"}
                   </td>
@@ -198,7 +230,7 @@ const Dashboard: React.FC = () => {
             )}
           </tbody>
         </table>
-
+        {/* <JobLogViewer/> */}
         <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md overflow-x-auto">
           {JSON.stringify(ganttTasks, null, 2)}
         </pre>

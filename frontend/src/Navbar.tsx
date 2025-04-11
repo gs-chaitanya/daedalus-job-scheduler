@@ -44,6 +44,14 @@ const Navbar: React.FC = () => {
         >
           Submit Jobs
         </Link>
+        <Link
+          to="/logger"
+          className={`text-gray-800 dark:text-white hover:underline ${
+            location.pathname === "/logger" ? "font-semibold" : ""
+          }`}
+        >
+          Realtime logs
+        </Link>
 
         
       </div>
