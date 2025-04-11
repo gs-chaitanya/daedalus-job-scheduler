@@ -101,7 +101,6 @@ uvicorn websocket:app --reload --port 8888
 Step 9: Setting up the Frontend
 ```bash
 npm i
-npm run dev //for dev 
 npm run build
 npm run preview
 ```
