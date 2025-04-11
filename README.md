@@ -88,12 +88,17 @@ Step 6: Pull and run Cassandra with Redis
 docker run -d --name redis-test -p 6379:6379 redis:7
 ```
 
-Step 7: Run the Redis Worker to Frontend Websocket
+Step 7: Start Poller
+```bash
+python poller.py
+```
+
+Step 8: Run the Redis Worker to Frontend Websocket
 ```bash
 uvicorn websocket:app --reload --port 8888
 ```
 
-Step 8: Setting up the Frontend
+Step 9: Setting up the Frontend
 ```bash
 npm i
 npm build
