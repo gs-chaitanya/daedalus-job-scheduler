@@ -83,7 +83,7 @@ Step 5: Run the FastAPI server (in fastapi_server.py)
 uvicorn fastapi_server:app --reload
 ```
 
-Step 6: Pull and run Cassandra with Redis
+Step 6: Pull and run Redis with Docker
 ```bash
 docker run -d --name redis-test -p 6379:6379 redis:7
 ```
@@ -101,8 +101,9 @@ uvicorn websocket:app --reload --port 8888
 Step 9: Setting up the Frontend
 ```bash
 npm i
-npm build
-npm start
+npm run dev //for dev 
+npm run build
+npm run preview
 ```
 
 And voila!
