@@ -30,15 +30,72 @@ const Dashboard: React.FC = () => {
   const [darkMode, setDarkMode] = useState<boolean>(false);
 
   useEffect(() => {
+    const socket = new WebSocket("ws://localhost:8888/ws/jobs");
+
+    socket.onopen = () => {
+      console.log("WebSocket connection established");
+    };
+
+    socket.onmessage = (message) => {
+      try {
+        const data = JSON.parse(message.data);
+        if (data.type === "job_update") {
+          setJobs((prevJobs) => {
+            const updatedJob = data.job;
+            const jobExists = prevJobs.find(
+              (job) => job.job_id === updatedJob.job_id
+            );
+
+            if (jobExists) {
+              // Update existing job
+              return prevJobs.map((job) =>
+                job.job_id === updatedJob.job_id
+                  ? { ...job, ...updatedJob }
+                  : job
+              );
+            } else {
+              // Add new job
+              return [...prevJobs, updatedJob];
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error);
+      }
+    };
+
+    socket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    socket.onclose = (event) => {
+      console.log("WebSocket closed:", event);
+    };
+
+    return () => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const tasks: GanttTask[] = jobs.map((job, index) => {
-      const endTime = new Date(new Date(job.start_time).getTime() + 5 * 60 * 1000); // 5 mins after start
+      const endTime = new Date(
+        new Date(job.start_time).getTime() + 5 * 60 * 1000
+      );
       return {
         id: job.job_id,
         name: job.payload || `Job ${index + 1}`,
         start: job.start_time,
         end: endTime.toISOString(),
         status: job.status || "pending",
-        progress: job.status === "success" ? 100 : job.status === "running" ? 50 : 0,
+        progress:
+          job.status === "success"
+            ? 100
+            : job.status === "running"
+              ? 50
+              : 0,
         dependencies: [],
       };
     });
@@ -50,18 +107,24 @@ const Dashboard: React.FC = () => {
       const res = await fetch(`http://localhost:8000/jobs/${userId}`);
       if (!res.ok) throw new Error("Failed to fetch jobs");
       const data = await res.json();
-      setJobs(data.jobs); // ← your response has a `jobs` array
+      setJobs(data.jobs);
     } catch (err) {
-      console.error("Error fetching job:", err);
-      alert("Failed to load job. Check user ID or server status.");
+      console.error("Error fetching jobs:", err);
+      alert("Failed to load jobs. Check user ID or server status.");
     }
   };
 
   return (
-    <div className={`${darkMode ? "dark" : ""}`}>
+    <div className={darkMode ? "dark" : ""}>
       <div className="p-6 min-h-screen bg-white text-black dark:bg-gray-900 dark:text-white transition-colors duration-300">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Job Scheduler Dashboard</h1>
+          {/* <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-md"
+          >
+            Toggle Dark Mode
+          </button> */}
         </div>
 
         <div className="mb-6 flex gap-4 items-center">
@@ -74,12 +137,11 @@ const Dashboard: React.FC = () => {
           />
           <button
             onClick={fetchJobs}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            className="px-4 py-2 bg-blue-500 text-white rounded-md"
           >
-            Load Jobs
+            Fetch Jobs
           </button>
         </div>
-
         <h2 className="text-xl font-semibold mb-2">Job List</h2>
         <table className="w-full border border-gray-300 mb-6 dark:border-gray-600">
           <thead className="bg-gray-100 dark:bg-gray-800">
@@ -100,16 +162,15 @@ const Dashboard: React.FC = () => {
                     {new Date(job.start_time).toLocaleString()}
                   </td>
                   <td
-  className={`border px-3 py-2 font-semibold ${
-    job.status === "done"
-      ? "text-green-600"
-      : job.status === "queued"
-      ? "text-blue-600"
-      : "text-yellow-600"
-  }`}
->
-  {job.status || "pending"}
-</td>
+                    className={`border px-3 py-2 font-semibold ${job.status === "done"
+                        ? "text-green-600"
+                        : job.status === "queued"
+                          ? "text-blue-600"
+                          : "text-yellow-600"
+                      }`}
+                  >
+                    {job.status || "pending"}
+                  </td>
 
                 </tr>
               ))
@@ -122,18 +183,11 @@ const Dashboard: React.FC = () => {
             )}
           </tbody>
         </table>
+        {/* Here, you can later add your Gantt chart component to visualize ganttTasks */}
 
-        <h2 className="text-xl font-semibold mb-3">Job Execution Timeline</h2>
-        {ganttTasks.length > 0 ? (
-          <div className="border p-4 rounded bg-gray-50 dark:bg-gray-800 dark:border-gray-600">
-            {/* You can replace this with a real Gantt chart later */}
-            <pre className="text-sm text-gray-700 dark:text-gray-300 overflow-x-auto">
-              {JSON.stringify(ganttTasks, null, 2)}
-            </pre>
-          </div>
-        ) : (
-          <p className="text-gray-500">No Gantt tasks to display.</p>
-        )}
+        <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md overflow-x-auto">
+          {JSON.stringify(ganttTasks, null, 2)}
+        </pre>
       </div>
     </div>
   );

@@ -3,6 +3,10 @@ import datetime
 import random
 import json
 from cassandra.cluster import Cluster
+from datetime import datetime, timezone, timedelta
+
+now = datetime.now(timezone.utc)
+
 
 cluster = Cluster(['127.0.0.1'])
 session = cluster.connect('job_keyspace')
@@ -36,11 +40,10 @@ def insert_job(job_id, start_time, payload, periodic_flag, period_time, user_id)
     ))
 
 def generate_jobs(n=10):
-    now = datetime.datetime.utcnow()
     for i in range(n):
         job_id = uuid.uuid4()
-        offset_seconds = random.randint(30, 300)  # between 30s and 5 min from now
-        start_time = now + datetime.timedelta(seconds=offset_seconds)
+        offset_seconds = random.randint(100, 300)  # between 30s and 5 min from now
+        start_time = now + timedelta(seconds=offset_seconds)
         payload = random_payload()
         is_periodic = random.choice([True, False])
         period_time = random.choice([60, 120, 300]) if is_periodic else None

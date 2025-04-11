@@ -74,7 +74,7 @@ const CreateJob = () => {
         className="backdrop-blur-xl bg-white/20 dark:bg-gray-900/40 shadow-2xl rounded-3xl px-8 py-10 w-full max-w-2xl space-y-6 border border-white/30 transition-all duration-300"
       >
         <h1 className="text-4xl font-bold text-white text-center mb-6 tracking-tight">
-          🚀 Create Your Job
+          Create Your Job
         </h1>
 
         {/* Grid layout for inputs */}
@@ -189,7 +189,7 @@ const CreateJob = () => {
           type="submit"
           className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white text-lg font-semibold py-3 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
         >
-          ✨ Submit Job
+           Submit Job
         </button>
       </form>
     </div>

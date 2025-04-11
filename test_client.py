@@ -3,13 +3,13 @@ import uuid
 from datetime import datetime
 import json
 
-BASE_URL = "http://localhost:8000"  # Make sure this matches your FastAPI server port
+BASE_URL = "http://localhost:8000"  
 
 def test_create_job():
     print("\n=== Testing Job Creation ===")
     job_data = {
         "start_time": datetime.now().isoformat(),
-        "user_id": str(uuid.uuid4()),  # Add a valid user_id as string
+        "user_id": str(uuid.uuid4()), 
         "payload": "Job payload test",
         "status": "pending",
         "periodic_flag": True,
@@ -21,7 +21,7 @@ def test_create_job():
     print(f"Status Code: {response.status_code}")
     print("Response:", json.dumps(response.json(), indent=2))
 
-    if response.status_code == 200:  # Adjusted to match FastAPI's default
+    if response.status_code == 200:  
         return response.json()['job_id']
     return None
 

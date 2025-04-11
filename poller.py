@@ -6,6 +6,8 @@ from redis import Redis
 from rq import Queue
 from rq import Queue, Retry
 from jobs import execute_job
+from datetime import datetime, timezone, timedelta
+
 
 CASSANDRA_HOSTS = ['127.0.0.1']
 KEYSPACE = 'job_keyspace'
@@ -20,7 +22,7 @@ queue = Queue(connection=redis_conn)
 print("Cassandra and Redis queue initialized.")
 
 def poll_and_schedule():
-    now = datetime.datetime.utcnow()
+    now = datetime.now(timezone.utc)
     query = """
         SELECT job_id, start_time, payload, periodic_flag, period_time, retry_count, retry_delay
         FROM JobExecutionHistory 

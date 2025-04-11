@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 
 const Navbar: React.FC = () => {
   const [isDark, setIsDark] = useState<boolean>(() => {
-    return localStorage.getItem("theme") === "dark" || false;
+    return localStorage.getItem("theme") === "dark" || true;
   });
 
   const location = useLocation(); // for route highlighting if needed
@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
   return (
     <nav className="w-full px-6 py-4 bg-white dark:bg-gray-900 shadow flex justify-between items-center">
       <h1 className="text-xl font-bold text-gray-800 dark:text-white">
-        Job Scheduler
+         Daedalus Job Scheduler
       </h1>
 
       <div className="flex items-center gap-4">

@@ -8,12 +8,12 @@ from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from cassandra.query import dict_factory
 
-app = FastAPI(title="Nutanix Paglus Job API")
+app = FastAPI(title="Nutanix API")
 
 # 👇 Add this before your routes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # or ["*"] for all
+    allow_origins=["*"],  # or ["*"] for all
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,7 +52,7 @@ class JobUpdate(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 def home():
-    return "<p>Nutanix Paglus</p>"
+    return "<p>Nutanix</p>"
 
 @app.post("/jobs")
 def create_job(job: JobCreate):
