@@ -5,7 +5,7 @@ import json
 from cassandra.cluster import Cluster
 from datetime import datetime, timezone, timedelta
 
-now = datetime.now(timezone.utc)
+now = datetime.now()
 
 
 cluster = Cluster(['127.0.0.1'])

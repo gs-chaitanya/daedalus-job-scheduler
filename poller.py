@@ -22,7 +22,7 @@ queue = Queue(connection=redis_conn)
 print("Cassandra and Redis queue initialized.")
 
 def poll_and_schedule():
-    now = datetime.now(timezone.utc)
+    now = datetime.now()
     query = """
         SELECT job_id, start_time, payload, periodic_flag, period_time, retry_count, retry_delay
         FROM JobExecutionHistory 
@@ -54,7 +54,7 @@ def poll_and_schedule():
         job_count += 1
 
         if job.periodic_flag:
-            next_run = run_time + datetime.timedelta(seconds=job.period_time)
+            next_run = run_time + timedelta(seconds=job.period_time)
             session.execute("""
                 UPDATE JobExecutionHistory SET start_time=%s, status='pending'
                 WHERE job_id=%s

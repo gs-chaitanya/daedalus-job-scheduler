@@ -11,6 +11,8 @@ type Job = {
   retry_count: number;
   retry_delay: number;
   error_message: string | null;
+  duration?: number;
+  result?: string;
 };
 
 type GanttTask = {
@@ -30,54 +32,74 @@ const Dashboard: React.FC = () => {
   const [darkMode, setDarkMode] = useState<boolean>(false);
 
   useEffect(() => {
-    const socket = new WebSocket("ws://localhost:8888/ws/jobs");
-
-    socket.onopen = () => {
-      console.log("WebSocket connection established");
-    };
-
-    socket.onmessage = (message) => {
-      try {
-        const data = JSON.parse(message.data);
-        if (data.type === "job_update") {
+    let socket: WebSocket | null = null;
+    let reconnectAttempts = 0;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  
+    const connectWebSocket = () => {
+      socket = new WebSocket("ws://localhost:8888/ws/jobs");
+  
+      socket.onopen = () => {
+        console.log("WebSocket connection established");
+        reconnectAttempts = 0; // Reset on successful connection
+      };
+  
+      socket.onmessage = (message) => {
+        try {
+          const data = JSON.parse(message.data);
+  
+          if (!data.job_id) {
+            console.warn("Received invalid job update:", data);
+            return;
+          }
+  
           setJobs((prevJobs) => {
-            const updatedJob = data.job;
             const jobExists = prevJobs.find(
-              (job) => job.job_id === updatedJob.job_id
+              (job) => job.job_id === data.job_id
             );
-
+  
             if (jobExists) {
-              // Update existing job
               return prevJobs.map((job) =>
-                job.job_id === updatedJob.job_id
-                  ? { ...job, ...updatedJob }
-                  : job
+                job.job_id === data.job_id ? { ...job, ...data } : job
               );
             } else {
-              // Add new job
-              return [...prevJobs, updatedJob];
+              return [...prevJobs, data];
             }
           });
+        } catch (err) {
+          console.error("Error parsing WebSocket message:", err);
         }
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
-      }
+      };
+  
+      socket.onerror = (err) => {
+        console.error("WebSocket error:", err);
+      };
+  
+      socket.onclose = (event) => {
+        console.warn("WebSocket closed:", event);
+        socket = null;
+  
+        // Try reconnecting with backoff
+        const delay = Math.min(1000 * 2 ** reconnectAttempts, 30000); // max 30s
+        reconnectTimeout = setTimeout(() => {
+          reconnectAttempts++;
+          connectWebSocket();
+        }, delay);
+      };
     };
-
-    socket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    socket.onclose = (event) => {
-      console.log("WebSocket closed:", event);
-    };
-
+  
+    connectWebSocket();
+  
     return () => {
-      if (socket.readyState === WebSocket.OPEN) {
+      if (socket && socket.readyState === WebSocket.OPEN) {
         socket.close();
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
       }
     };
   }, []);
+  
 
   useEffect(() => {
     const tasks: GanttTask[] = jobs.map((job, index) => {
@@ -119,12 +141,6 @@ const Dashboard: React.FC = () => {
       <div className="p-6 min-h-screen bg-white text-black dark:bg-gray-900 dark:text-white transition-colors duration-300">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Job Scheduler Dashboard</h1>
-          {/* <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-md"
-          >
-            Toggle Dark Mode
-          </button> */}
         </div>
 
         <div className="mb-6 flex gap-4 items-center">
@@ -171,7 +187,6 @@ const Dashboard: React.FC = () => {
                   >
                     {job.status || "pending"}
                   </td>
-
                 </tr>
               ))
             ) : (
@@ -183,7 +198,6 @@ const Dashboard: React.FC = () => {
             )}
           </tbody>
         </table>
-        {/* Here, you can later add your Gantt chart component to visualize ganttTasks */}
 
         <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md overflow-x-auto">
           {JSON.stringify(ganttTasks, null, 2)}

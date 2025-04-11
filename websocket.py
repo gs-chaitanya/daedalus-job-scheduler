@@ -2,6 +2,7 @@ import asyncio
 from fastapi import FastAPI, WebSocket
 import json
 from pathlib import Path
+from starlette.websockets import WebSocketDisconnect
 
 app = FastAPI()
 JOBS_FILE = Path("jobs.jsonl")
@@ -40,20 +41,23 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             current_jobs = load_jobs_from_file()
-
-            # Identify new jobs by comparing with stored_jobs
             new_jobs = current_jobs[len(stored_jobs):]
 
             for job in new_jobs:
-                await websocket.send_json(job)
+                try:
+                    await websocket.send_json(job)
+                except RuntimeError:
+                    print("Tried to send to a closed WebSocket.")
+                    break
 
-            # Update stored_jobs with current snapshot
             stored_jobs = current_jobs
-            if len(stored_jobs) > 5:
-                stored_jobs = []
-                clear_jobs_file()
-                print("Job list exceeded 5 entries. Cleared jobs file.")
-            await asyncio.sleep(2)  # Check every 2 seconds
+            await asyncio.sleep(2)
+    except WebSocketDisconnect:
+        print("Client disconnected cleanly.")
     except Exception as e:
-        print(f"WebSocket connection error: {e}")
-        await websocket.close()
+        print(f"WebSocket error: {e}")
+    finally:
+        try:
+            await websocket.close()
+        except:
+            pass
